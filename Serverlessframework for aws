@@ -1,0 +1,99 @@
+# Welcome to Serverless!
+
+service: XXX
+
+plugins:
+  - serverless-plugin-tracing
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.8
+  stage: XXX
+  tracing: true
+  apiName: 
+  region: 
+  timeout: 30
+
+  iam:
+    role:
+      statements:
+
+        - Effect: Allow
+          Action:
+            - 'dynamodb:*'
+          Resource: "*"
+
+        - Effect: Allow
+          Action:
+            - 'sqs:*'
+          Resource:
+            - '*'
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+
+functions:
+  authorizer:
+    handler: src/
+    layers:
+        - arn:
+   
+  putData1:
+    handler: src/
+
+  Function1:
+    handler: src/app
+    tags:
+      Name: 
+    events:
+      - http:
+          path: 
+          method: post
+          integration: lambda
+          authorizer:
+            name: authorizer
+            type: request
+          response:
+            headers:
+              Content-Type: "'application/json'"
+            statusCodes:
+              202:
+                pattern: ''
+              500:
+                pattern: '.*"statusCode": 500.*'
+                template:
+                  application/json: $input.path("$.body")
+                headers:
+                  Content-Type: "'application/json'"
+
+  Function2:
+    handler: src/
+    tags:
+      Name: 
+    events:
+      - iot:
+          name: 
+          sql: "SELECT *, 
+          description: 
+          sqlVersion:
+
+            
+    TopicRule:
+      Type: "AWS::IoT::TopicRule"
+      Properties:
+        RuleName: ""
+        TopicRulePayload:
+          RuleDisabled: 'false'
+          AwsIotSqlVersion: '2016-03-23'
+          Sql: "SELECT *, "
+          Actions:
+          - Kinesis:
+              StreamName: ""
+              RoleArn: 
+        Tags:
+          - Key: Name
+            Value: 
+  
