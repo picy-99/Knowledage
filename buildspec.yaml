@@ -1,0 +1,42 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - npm install -g serverless
+      - pip3 install pytest
+      - pip3 install pytest-cov
+      - pip3 install 'moto[all]'
+      - pip3 install pytest-mock
+      - pip3 install certifi
+      - pip3 install aws-xray-sdk
+      - npm install --save-dev serverless-plugin-tracing
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - export AWS_XRAY_SDK_ENABLED=false
+      - python -m pytest source/tests/
+        --cov=source/tests/
+        --cov-branch
+        --cov-report xml:source/coverage.xml
+        --junitxml=source/pytest_results.xml
+      - export AWS_XRAY_SDK_ENABLED=true
+      - cd src/foldername && sls deploy
+      - cd src/app_name && sls deploy
+
+  post_build:
+    commands:
+      - echo Build completed on `date`
+
+reports:
+  pytest_reports:
+    files:
+      - pytest_results.xml
+    base-directory: source/
+    file-format: JUNITXML
+  coverage_reports:
+    files:
+      - coverage.xml
+    base-directory: source/
+    file-format: COBERTURAXML
