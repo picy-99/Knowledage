@@ -1,0 +1,18 @@
+
+test_name: Response Test
+
+stages:
+  - name: 想定されたjsonが返ってくるかどうかのテスト
+    request:
+      url: https://XXXX
+      json:
+        "Key": "value"
+      method: POST
+      headers:
+        content-type: application/json
+      cert:
+          - "my_client.pem"
+          - "my_client.key"
+    response:
+      status_code: 500
+
