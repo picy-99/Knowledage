@@ -1,0 +1,108 @@
+# Docker
+# Build and push an image to Azure Container Registry
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+  branches:  
+    include:  
+    - '*'  
+    exclude:
+    - feature/*
+pr:  
+  branches:  
+    include:  
+    - '*'  
+
+pool:
+  vmImage: 'ubuntu-latest'
+  
+variables:
+  dockerfilePath: '$(Build.SourcesDirectory)/xx.Dockerfile'
+  tag: '$(Build.BuildId)'
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '16.14.x'
+    checkLatest: true
+  displayName: 'FrontEnd - Install Node.js'
+
+- script: |
+    npm install -g @angular/cli
+    npm install karma-junit-reporter --save-dev
+    npm install karma-coverage --save-dev
+    npm install eslint --save-dev
+    npm install
+  displayName: 'FrontEnd - Install Angular (Angula CLI, karma-junit-reporter, karma-coverage, eslint)'
+
+- script: |
+    ng build --configuration development
+  displayName: 'FrontEnd - Build(Development)'
+
+- script: |
+    ng test --no-watch --no-progress --code-coverage --browsers=ChromeHeadlessCI
+  displayName: 'FrontEnd - Test, CodeCoverage'
+
+- script: |
+    ng lint
+  displayName: 'FrontEnd - StaticAnalysis (ng lint)'
+
+- task: PublishTestResults@2
+  inputs:
+    testRunner: JUnit
+    testResultsFiles: "**/TESTS*.xml"
+    searchFolder: $(System.DefaultWorkingDirectory)/junit/angular
+    mergeTestResults: true
+    testRunTitle: Angular
+  displayName: 'FrontEnd - Publish Test Results'
+
+- task: PublishCodeCoverageResults@1
+  inputs:
+      codeCoverageTool: 'Cobertura'
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/angular/cobertura/cobertura-coverage.xml'
+  displayName: 'FrontEnd - Publish CodeCoverage Results'
+
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'clean package'
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    testRunTitle: 'SpringBoot'
+    codeCoverageTool: 'JaCoCo'
+    failIfCoverageEmpty: true
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.8'
+    jdkArchitectureOption: 'x64'
+    mavenOptions: '-Xmx3072m'
+    checkStyleRunAnalysis: true
+    pmdRunAnalysis: true
+    findBugsRunAnalysis: true
+  displayName: 'BackEnd - Build(Development), Test, CodeCoverage(JaCoCo), StaticAnalysis(CheckStyle,PMD,FindBugs) with Apache Maven'
+
+#- task: reportgenerator@4
+#  inputs:
+#    reports: $(System.DefaultWorkingDirectory)/coverage/angular/cobertura/cobertura-coverage.xml;$(System.DefaultWorkingDirectory)/**/jacoco.xml
+#    targetdir: $(System.DefaultWorkingDirectory)/coverage
+#    reporttypes: 'Cobertura'
+
+#- task: PublishCodeCoverageResults@1
+#  inputs:
+#    codeCoverageTool: "Cobertura"
+#    summaryFileLocation: $(System.DefaultWorkingDirectory)/coverage/Cobertura.xml
+
+- task: Docker@2
+  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
+  inputs:
+    containerRegistry: 'xxx'
+    repository: 'xxx
+    command: 'xxx'
+    Dockerfile: $(dockerfilePath)
+    tags: |
+      latest
+      $(Build.BuildId)
